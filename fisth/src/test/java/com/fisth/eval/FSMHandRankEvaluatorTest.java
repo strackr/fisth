@@ -17,11 +17,22 @@
  */
 package com.fisth.eval;
 
+import static com.fisth.Card.ACE_OF_SPADES;
+import static com.fisth.Card.JACK_OF_HEARTS;
+import static com.fisth.Card.JACK_OF_SPADES;
+import static com.fisth.Card.KING_OF_HEARTS;
+import static com.fisth.Card.KING_OF_SPADES;
+import static com.fisth.Card.QUEEN_OF_HEARTS;
+import static com.fisth.Card.QUEEN_OF_SPADES;
+import static com.fisth.Card.TWO_OF_CLUBS;
+import static com.fisth.Card.TWO_OF_DIAMONDS;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -29,6 +40,16 @@ import com.fisth.Card;
 
 public class FSMHandRankEvaluatorTest {
 
+	private HandRankEvaluator evaluator;
+	
+	@BeforeMethod
+	public void setUp() {
+		ConfigurationLoader resourceLoader = new ConfigurationLoader();
+		FSMHandRankEvaluatorFactory evaluatorFactory = new FSMHandRankEvaluatorFactory(
+				resourceLoader);
+		evaluator = evaluatorFactory.create();
+	}
+	
 	@DataProvider(name = "card-configurations-with-rank")
 	public Object[][] cardCofnigurationsWithRank() {
 		Map<String, Card> cardMappings = new HashMap<String, Card>();
@@ -58,14 +79,22 @@ public class FSMHandRankEvaluatorTest {
 
 	@Test(dataProvider = "card-configurations-with-rank")
 	public void shouldCorrectlyClassifyPokerHands(int trueRank, Board board, Hand hand) {
-		ConfigurationLoader resourceLoader = new ConfigurationLoader();
-		FSMHandRankEvaluatorFactory evaluatorFactory = new FSMHandRankEvaluatorFactory(
-				resourceLoader);
-		HandRankEvaluator evaluator = evaluatorFactory.create();
-		
 		HandRank rank = evaluator.evaluate(board, hand);
 		
 		assertEquals(rank.getValue(), trueRank);
+	}
+
+	@Test
+	public void shouldClassifyTwoAndThreePairHands() {
+		Board twoPairBoard = new Board(KING_OF_SPADES, KING_OF_HEARTS,
+				JACK_OF_SPADES, JACK_OF_HEARTS, TWO_OF_CLUBS);
+		Hand threePairHand = new Hand(QUEEN_OF_SPADES, QUEEN_OF_HEARTS);
+		Hand twoPairHand = new Hand(ACE_OF_SPADES, TWO_OF_DIAMONDS);
+		
+		HandRank threePairRank = evaluator.evaluate(twoPairBoard, threePairHand);
+		HandRank twoPairRank = evaluator.evaluate(twoPairBoard, twoPairHand);
+		
+		assertTrue(threePairRank.getValue() > twoPairRank.getValue());
 	}
 
 }
